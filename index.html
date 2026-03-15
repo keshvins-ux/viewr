@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="theme-color" content="#000000"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="ViewR"/>
+<title>ViewR — Watch. Earn. Cash out.</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --purple: #8B5CF6;
+  --purple-dim: rgba(139,92,246,0.18);
+  --green: #10B981;
+  --green-dim: rgba(16,185,129,0.18);
+  --amber: #F59E0B;
+  --red: #EF4444;
+  --white: #ffffff;
+  --text2: rgba(255,255,255,0.65);
+  --text3: rgba(255,255,255,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; user-select: none; }
+html, body { height: 100%; overflow: hidden; background: #000; font-family: 'DM Sans', sans-serif; color: #fff; }
+body { max-width: 430px; margin: 0 auto; position: relative; }
+
+/* ── SPLASH ── */
+#splash {
+  position: fixed; inset: 0; background: #000; z-index: 999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: opacity 0.5s ease;
+}
+#splash.hide { opacity: 0; pointer-events: none; }
+.splash-ring {
+  width: 110px; height: 110px; border-radius: 50%;
+  border: 1px solid rgba(139,92,246,0.4);
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 22px;
+  animation: ringPulse 2s ease-in-out infinite;
+}
+@keyframes ringPulse { 0%,100%{box-shadow:0 0 0 0 rgba(139,92,246,0.4)} 50%{box-shadow:0 0 0 24px rgba(139,92,246,0)} }
+.splash-eye { font-size: 48px; }
+.splash-logo { font-family: 'Syne', sans-serif; font-size: 46px; font-weight: 800; letter-spacing: -2px; }
+.splash-logo span { color: var(--purple); }
+.splash-tag { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 6px; }
+
+/* ── FEED CONTAINER ── */
+#feed-container {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  max-width: 430px; margin: 0 auto;
+  overflow: hidden;
+}
+
+/* ── VIDEO STACK ── */
+#video-stack {
+  position: absolute; inset: 0;
+  touch-action: none;
+}
+
+.video-slide {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+  transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  will-change: transform;
+}
+
+.video-slide video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+/* Gradient overlays */
+.video-slide::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,0.5) 0%,
+    transparent 25%,
+    transparent 55%,
+    rgba(0,0,0,0.7) 100%
+  );
+  z-index: 1; pointer-events: none;
+}
+
+/* ── TOP HUD ── */
+#top-hud {
+  position: fixed; top: 0; left: 0; right: 0;
+  padding: env(safe-area-inset-top, 12px) 16px 12px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
+  display: flex; align-items: center; justify-content: space-between;
+  z-index: 50;
+  max-width: 430px; margin: 0 auto;
+}
+
+.hud-logo {
+  font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800;
+  letter-spacing: -1px; text-shadow: 0 1px 8px rgba(0,0,0,0.5);
+}
+.hud-logo span { color: var(--purple); }
+
+.mood-tabs {
+  display: flex; gap: 6px;
+}
+.mood-tab {
+  padding: 5px 12px; border-radius: 20px;
+  font-size: 11px; font-weight: 500; font-family: 'DM Sans', sans-serif;
+  border: 0.5px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35); backdrop-filter: blur(8px);
+  color: rgba(255,255,255,0.7); cursor: pointer; transition: all 0.15s;
+  white-space: nowrap;
+}
+.mood-tab.active {
+  background: var(--purple-dim); border-color: var(--purple);
+  color: #fff;
+}
+
+/* ── EARN TICKER ── */
+#earn-ticker {
+  position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); right: 16px;
+  background: var(--green-dim); border: 0.5px solid var(--green);
+  border-radius: 20px; padding: 6px 12px;
+  display: flex; align-items: center; gap: 5px;
+  z-index: 51; backdrop-filter: blur(8px);
+  animation: tickerPop 0s ease; max-width: 430px;
+}
+#earn-ticker.pop { animation: tickerPop 0.3s ease; }
+@keyframes tickerPop { 0%{transform:scale(1)} 50%{transform:scale(1.08)} 100%{transform:scale(1)} }
+.ticker-icon { font-size: 12px; }
+.ticker-val {
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  color: var(--green);
+}
+
+/* ── VIDEO INFO (bottom left) ── */
+.video-info {
+  position: absolute; bottom: 90px; left: 16px; right: 80px;
+  z-index: 10;
+}
+.video-creator {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+}
+.creator-av {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; backdrop-filter: blur(4px); flex-shrink: 0;
+}
+.creator-name {
+  font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  text-shadow: 0 1px 6px rgba(0,0,0,0.6);
+}
+.follow-btn {
+  font-size: 11px; font-weight: 600; font-family: 'Syne', sans-serif;
+  color: var(--purple); background: var(--purple-dim);
+  border: 0.5px solid var(--purple); border-radius: 20px;
+  padding: 3px 10px; cursor: pointer; white-space: nowrap;
+  backdrop-filter: blur(4px);
+}
+.video-title {
+  font-size: 13px; line-height: 1.5; color: rgba(255,255,255,0.9);
+  text-shadow: 0 1px 6px rgba(0,0,0,0.7);
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.video-tags {
+  display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;
+}
+.tag {
+  font-size: 11px; color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.08);
+  padding: 2px 8px; border-radius: 4px;
+}
+
+/* ── EARN BADGE (per video) ── */
+.earn-badge {
+  position: absolute; bottom: 148px; left: 16px;
+  background: var(--green-dim); border: 0.5px solid var(--green);
+  border-radius: 20px; padding: 5px 12px;
+  font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+  color: var(--green); z-index: 10;
+  backdrop-filter: blur(8px);
+}
+
+/* ── RIGHT ACTIONS ── */
+.video-actions {
+  position: absolute; bottom: 90px; right: 14px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  z-index: 10;
+}
+.action-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  cursor: pointer; transition: transform 0.15s;
+}
+.action-btn:active { transform: scale(0.9); }
+.action-icon {
+  width: 46px; height: 46px; border-radius: 50%;
+  background: rgba(255,255,255,0.12); backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; border: 0.5px solid rgba(255,255,255,0.15);
+}
+.action-label {
+  font-size: 11px; color: rgba(255,255,255,0.75);
+  font-weight: 500; text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.action-btn.liked .action-icon { background: rgba(239,68,68,0.2); border-color: var(--red); }
+
+/* ── PROGRESS BAR ── */
+#progress-bar {
+  position: fixed; bottom: 72px; left: 0; right: 0;
+  height: 2px; background: rgba(255,255,255,0.15);
+  z-index: 50; max-width: 430px; margin: 0 auto;
+}
+#progress-fill {
+  height: 100%; background: var(--purple);
+  transition: width 0.5s linear; width: 0%;
+}
+
+/* ── BOTTOM NAV ── */
+#bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 72px; padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: rgba(0,0,0,0.85); backdrop-filter: blur(20px);
+  border-top: 0.5px solid rgba(255,255,255,0.08);
+  display: flex; z-index: 50;
+  max-width: 430px; margin: 0 auto;
+}
+.nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 3px;
+  font-size: 10px; color: rgba(255,255,255,0.4);
+  border: none; background: none; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; font-weight: 500;
+  transition: color 0.15s;
+}
+.nav-btn.active { color: #fff; }
+.nav-btn .ni { font-size: 24px; line-height: 1; }
+
+/* ── SWIPE HINT ── */
+#swipe-hint {
+  position: fixed; bottom: 140px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  z-index: 60; animation: hintFloat 1.5s ease-in-out infinite;
+  transition: opacity 0.5s;
+}
+#swipe-hint.hide { opacity: 0; pointer-events: none; }
+@keyframes hintFloat { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-8px)} }
+.hint-arrow { font-size: 28px; opacity: 0.7; }
+.hint-text { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500; }
+
+/* ── WALLET SHEET ── */
+#wallet-sheet {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+  z-index: 200; display: none; align-items: flex-end;
+}
+#wallet-sheet.open { display: flex; }
+.wallet-body {
+  background: #111; border-radius: 28px 28px 0 0;
+  padding: 24px 20px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  width: 100%; animation: slideUp 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+.sheet-handle { width: 36px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto 20px; }
+.wallet-balance {
+  text-align: center; margin-bottom: 24px;
+}
+.wallet-label { font-size: 12px; color: rgba(255,255,255,0.4); font-family: 'Syne', sans-serif; letter-spacing: 0.5px; text-transform: uppercase; }
+.wallet-amount { font-family: 'Syne', sans-serif; font-size: 52px; font-weight: 800; letter-spacing: -2px; color: var(--green); margin: 6px 0 4px; }
+.wallet-sub { font-size: 12px; color: rgba(255,255,255,0.4); }
+.cashout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.cashout-opt {
+  background: rgba(255,255,255,0.06); border-radius: 14px;
+  padding: 14px 12px; border: 0.5px solid rgba(255,255,255,0.1);
+  cursor: pointer; text-align: center; transition: border-color 0.15s;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.cashout-opt:active { border-color: var(--purple); background: var(--purple-dim); }
+.cashout-opt-icon { font-size: 26px; }
+.cashout-opt-name { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700; color: #fff; }
+.cashout-opt-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+.wallet-close {
+  width: 100%; background: rgba(255,255,255,0.08);
+  border: 0.5px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.6);
+  border-radius: 14px; padding: 14px; font-size: 14px; font-weight: 500;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+
+/* ── ATTENTION CHECK ── */
+#attention-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+  z-index: 300; display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+}
+#attention-overlay.show { display: flex; }
+.attn-emoji { font-size: 56px; animation: bounce 0.5s ease-in-out infinite alternate; }
+@keyframes bounce { from{transform:scale(1)} to{transform:scale(1.1)} }
+.attn-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: #fff; }
+.attn-sub { font-size: 14px; color: rgba(255,255,255,0.6); }
+.attn-btn {
+  background: var(--purple); color: #fff;
+  border: none; border-radius: 16px; padding: 16px 40px;
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-top: 8px;
+  animation: attPulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes attPulse { from{transform:scale(1)} to{transform:scale(1.04)} }
+
+/* ── CASHOUT CONFIRM ── */
+#cashout-confirm {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+  z-index: 400; display: none; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0; padding: 24px;
+}
+#cashout-confirm.show { display: flex; }
+.cashout-title { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; text-align: center; margin-bottom: 8px; }
+.cashout-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 28px; }
+.cashout-amount { font-family: 'Syne', sans-serif; font-size: 56px; font-weight: 800; color: var(--green); letter-spacing: -2px; margin-bottom: 6px; }
+.cashout-dest-card {
+  background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 16px; padding: 16px 20px; width: 100%;
+  display: flex; align-items: center; gap: 14px; margin-bottom: 24px;
+}
+.confirm-btn {
+  width: 100%; background: var(--green); color: #fff;
+  border: none; border-radius: 16px; padding: 16px;
+  font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  cursor: pointer; margin-bottom: 10px;
+}
+.cancel-btn {
+  width: 100%; background: none; border: 0.5px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5); border-radius: 16px; padding: 14px;
+  font-size: 14px; cursor: pointer;
+}
+
+/* ── TOAST ── */
+#toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: rgba(30,30,30,0.95); border: 0.5px solid rgba(255,255,255,0.15);
+  color: #fff; padding: 10px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 500; opacity: 0;
+  transition: opacity 0.3s; pointer-events: none;
+  white-space: nowrap; z-index: 500;
+  backdrop-filter: blur(10px);
+}
+#toast.show { opacity: 1; }
+
+/* ── VIDEO COMPLETION FLASH ── */
+.earn-flash {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800;
+  color: var(--green); text-shadow: 0 0 30px rgba(16,185,129,0.5);
+  pointer-events: none; z-index: 100;
+  animation: earnFlash 0.8s ease forwards;
+}
+@keyframes earnFlash {
+  0%{opacity:0;transform:translate(-50%,-50%) scale(0.5)}
+  30%{opacity:1;transform:translate(-50%,-50%) scale(1.1)}
+  70%{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-60%) scale(1)}
+}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-ring"><div class="splash-eye">👁️</div></div>
+  <div class="splash-logo">View<span>R</span></div>
+  <div class="splash-tag">Watch. Earn. Cash out.</div>
+</div>
+
+<!-- FEED -->
+<div id="feed-container">
+  <!-- Video stack (slides injected by JS) -->
+  <div id="video-stack"></div>
+
+  <!-- Top HUD -->
+  <div id="top-hud">
+    <div class="hud-logo">View<span>R</span></div>
+    <div class="mood-tabs">
+      <div class="mood-tab active" onclick="setMood(this,'all')">✨ For You</div>
+      <div class="mood-tab" onclick="setMood(this,'local')">🌏 Local</div>
+      <div class="mood-tab" onclick="setMood(this,'trending')">🔥 Hot</div>
+    </div>
+  </div>
+
+  <!-- Earn ticker (top right) -->
+  <div id="earn-ticker">
+    <span class="ticker-icon">💰</span>
+    <span class="ticker-val" id="ticker-val">RM 0.00</span>
+  </div>
+
+  <!-- Progress bar -->
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+
+  <!-- Bottom nav -->
+  <div id="bottom-nav">
+    <button class="nav-btn active" onclick="showFeed()"><span class="ni">🏠</span>Feed</button>
+    <button class="nav-btn" onclick="openWallet()"><span class="ni">💰</span>Wallet</button>
+    <button class="nav-btn" onclick="toast('Creator upload coming soon! 🎬')"><span class="ni">➕</span>Create</button>
+    <button class="nav-btn" onclick="toast('Profile coming soon! 👤')"><span class="ni">👤</span>Me</button>
+  </div>
+
+  <!-- Swipe hint -->
+  <div id="swipe-hint">
+    <div class="hint-arrow">↑</div>
+    <div class="hint-text">Swipe up to earn more</div>
+  </div>
+</div>
+
+<!-- ATTENTION CHECK -->
+<div id="attention-overlay">
+  <div class="attn-emoji">👀</div>
+  <div class="attn-title">Still watching?</div>
+  <div class="attn-sub">Tap to confirm and keep earning</div>
+  <button class="attn-btn" onclick="confirmAttention()">Yes, I'm here! 🙋</button>
+</div>
+
+<!-- WALLET SHEET -->
+<div id="wallet-sheet" onclick="closeWalletOutside(event)">
+  <div class="wallet-body">
+    <div class="sheet-handle"></div>
+    <div class="wallet-balance">
+      <div class="wallet-label">Total earned</div>
+      <div class="wallet-amount" id="wallet-amt">RM 0.00</div>
+      <div class="wallet-sub">Cash out anytime — no minimum during beta</div>
+    </div>
+    <div class="cashout-grid">
+      <div class="cashout-opt" onclick="openCashout('GrabPay','🟢')">
+        <div class="cashout-opt-icon">🟢</div>
+        <div class="cashout-opt-name">GrabPay</div>
+        <div class="cashout-opt-sub">Instant</div>
+      </div>
+      <div class="cashout-opt" onclick="openCashout('Touch \'n Go','🔵')">
+        <div class="cashout-opt-icon">🔵</div>
+        <div class="cashout-opt-name">Touch 'n Go</div>
+        <div class="cashout-opt-sub">Instant</div>
+      </div>
+      <div class="cashout-opt" onclick="openCashout('ShopeePay','🟠')">
+        <div class="cashout-opt-icon">🟠</div>
+        <div class="cashout-opt-name">ShopeePay</div>
+        <div class="cashout-opt-sub">Instant</div>
+      </div>
+      <div class="cashout-opt" onclick="openCashout('Bank Transfer','🏦')">
+        <div class="cashout-opt-icon">🏦</div>
+        <div class="cashout-opt-name">Bank Transfer</div>
+        <div class="cashout-opt-sub">1–2 days</div>
+      </div>
+    </div>
+    <button class="wallet-close" onclick="closeWallet()">Close</button>
+  </div>
+</div>
+
+<!-- CASHOUT CONFIRM -->
+<div id="cashout-confirm">
+  <div style="font-size:48px;margin-bottom:16px;">💸</div>
+  <div class="cashout-title">Cash out to <span id="co-method">GrabPay</span></div>
+  <div class="cashout-sub">Instant transfer · No fees during beta</div>
+  <div class="cashout-amount" id="co-amount">RM 0.00</div>
+  <div class="cashout-dest-card">
+    <span style="font-size:28px;" id="co-icon">🟢</span>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;" id="co-dest">GrabPay</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.4);">Instant · No fees</div>
+    </div>
+  </div>
+  <button class="confirm-btn" onclick="confirmCashout()">Confirm cash out</button>
+  <button class="cancel-btn" onclick="closeCashout()">Cancel</button>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── CONTENT DATA ──────────────────────────────────────
+// Using royalty-free videos from Pexels (free to use)
+const VIDEOS = [
+  {
+    id: 1,
+    src: 'https://www.pexels.com/video/854/download/?fps=25.0&h=1920&w=1080',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4',
+    creator: '@nasilemakguy',
+    av: '🍱',
+    title: 'Best nasi lemak spots in KL you\'ve never heard of 🇲🇾',
+    tags: ['#food', '#kl', '#malaysia'],
+    earn: 0.06,
+    mood: ['all', 'local'],
+    likes: '24.3K',
+  },
+  {
+    id: 2,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-video-call-from-her-apartment-42317-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-young-woman-talking-on-video-call-from-her-apartment-42317-large.mp4',
+    creator: '@ringgitwise',
+    av: '💼',
+    title: 'How I saved RM 500 this month without feeling it 💸',
+    tags: ['#finance', '#saving', '#malaysia'],
+    earn: 0.08,
+    mood: ['all', 'trending'],
+    likes: '89.1K',
+  },
+  {
+    id: 3,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-man-dancing-under-changing-lights-32949-large.mp4',
+    creator: '@adamzainal',
+    av: '😄',
+    title: 'POV: Malaysian mom finds your online shopping cart 😭😂',
+    tags: ['#comedy', '#relatable', '#viral'],
+    earn: 0.06,
+    mood: ['all', 'trending'],
+    likes: '412K',
+  },
+  {
+    id: 4,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-traveling-by-mountain-road-4149-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-traveling-by-mountain-road-4149-large.mp4',
+    creator: '@ipohborn',
+    av: '🌏',
+    title: 'Hidden waterfall 2 hours from KL — no tourists 🏞️',
+    tags: ['#travel', '#malaysia', '#nature'],
+    earn: 0.04,
+    mood: ['all', 'local'],
+    likes: '18.7K',
+  },
+  {
+    id: 5,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-woman-doing-a-fitness-routine-at-the-gym-2182-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-woman-doing-a-fitness-routine-at-the-gym-2182-large.mp4',
+    creator: '@fitwithfaris',
+    av: '🏋️',
+    title: '7-minute apartment workout — no equipment needed 💪',
+    tags: ['#fitness', '#health', '#workout'],
+    earn: 0.05,
+    mood: ['all'],
+    likes: '56.2K',
+  },
+  {
+    id: 6,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-preparing-a-delicious-dish-with-pasta-3050-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-preparing-a-delicious-dish-with-pasta-3050-large.mp4',
+    creator: '@chefhanim',
+    av: '👩‍🍳',
+    title: 'Char kway teow in 15 minutes — better than hawker stall 🍜',
+    tags: ['#cooking', '#food', '#local'],
+    earn: 0.06,
+    mood: ['all', 'local'],
+    likes: '33.9K',
+  },
+  {
+    id: 7,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-city-traffic-at-night-11-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-aerial-view-of-city-traffic-at-night-11-large.mp4',
+    creator: '@klnightlife',
+    av: '🌆',
+    title: 'KL after midnight — the city nobody talks about 🌃',
+    tags: ['#kl', '#nightlife', '#malaysia'],
+    earn: 0.05,
+    mood: ['all', 'local', 'trending'],
+    likes: '71.4K',
+  },
+  {
+    id: 8,
+    src: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-2255-large.mp4',
+    fallback: 'https://assets.mixkit.co/videos/preview/mixkit-hands-holding-a-smartphone-2255-large.mp4',
+    creator: '@techbyamir',
+    av: '📱',
+    title: 'I got paid RM 24 just watching videos this week 🤯',
+    tags: ['#viewr', '#earnonline', '#viral'],
+    earn: 0.08,
+    mood: ['all', 'trending'],
+    likes: '203K',
+  },
+];
+
+// ── STATE ─────────────────────────────────────────────
+let totalEarned = parseFloat(localStorage.getItem('vr_v2_earned') || '0');
+let currentIndex = 0;
+let videoEarned = 0;
+let watchSeconds = 0;
+let watchTimer = null;
+let attentionTimer = null;
+let progressTimer = null;
+let swipeStartY = 0;
+let swipeStartX = 0;
+let isSwiping = false;
+let currentMood = 'all';
+let filteredVideos = [...VIDEOS];
+let likedVideos = new Set();
+let shownSwipeHint = false;
+let cashoutMethod = '';
+let cashoutIcon = '';
+
+// ── INIT ─────────────────────────────────────────────
+window.addEventListener('load', () => {
+  buildSlides();
+  updateTicker();
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 600);
+    loadVideo(0);
+    setTimeout(() => {
+      document.getElementById('swipe-hint').classList.remove('hide');
+    }, 1500);
+  }, 1600);
+});
+
+// ── BUILD SLIDES ──────────────────────────────────────
+function buildSlides() {
+  const stack = document.getElementById('video-stack');
+  stack.innerHTML = '';
+  filteredVideos.forEach((v, i) => {
+    const slide = document.createElement('div');
+    slide.className = 'video-slide';
+    slide.id = `slide-${i}`;
+    slide.style.transform = i === 0 ? 'translateY(0%)' : 'translateY(100%)';
+    slide.innerHTML = `
+      <video id="vid-${i}" loop playsinline preload="${i<2?'auto':'none'}"
+        poster="" muted>
+        <source src="${v.src}" type="video/mp4"/>
+        <source src="${v.fallback}" type="video/mp4"/>
+      </video>
+      <div class="video-info">
+        <div class="video-creator">
+          <div class="creator-av">${v.av}</div>
+          <div class="creator-name">${v.creator}</div>
+          <div class="follow-btn" onclick="followCreator(event,'${v.creator}')">Follow</div>
+        </div>
+        <div class="video-title">${v.title}</div>
+        <div class="video-tags">${v.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+      <div class="earn-badge">+RM ${v.earn.toFixed(2)} / watch</div>
+      <div class="video-actions">
+        <div class="action-btn" id="like-${i}" onclick="toggleLike(${i})">
+          <div class="action-icon">❤️</div>
+          <div class="action-label">${v.likes}</div>
+        </div>
+        <div class="action-btn" onclick="shareVideo(${i})">
+          <div class="action-icon">↗️</div>
+          <div class="action-label">Share</div>
+        </div>
+        <div class="action-btn" onclick="openWallet()">
+          <div class="action-icon">💰</div>
+          <div class="action-label">Wallet</div>
+        </div>
+      </div>
+    `;
+    stack.appendChild(slide);
+  });
+  setupSwipe();
+}
+
+// ── VIDEO LOADING ─────────────────────────────────────
+function loadVideo(index) {
+  if (index < 0 || index >= filteredVideos.length) return;
+  const vid = document.getElementById(`vid-${index}`);
+  if (!vid) return;
+
+  // Unmute and play
+  vid.muted = false;
+  vid.volume = 0.7;
+  const playPromise = vid.play();
+  if (playPromise) {
+    playPromise.catch(() => {
+      // Autoplay blocked — play muted
+      vid.muted = true;
+      vid.play().catch(() => {});
+    });
+  }
+
+  // Preload next
+  if (index + 1 < filteredVideos.length) {
+    const nextVid = document.getElementById(`vid-${index + 1}`);
+    if (nextVid) nextVid.preload = 'auto';
+  }
+
+  startEarning(index);
+}
+
+function pauseVideo(index) {
+  const vid = document.getElementById(`vid-${index}`);
+  if (vid) vid.pause();
+  stopEarning();
+}
+
+// ── EARNING ENGINE ────────────────────────────────────
+function startEarning(index) {
+  stopEarning();
+  videoEarned = 0;
+  watchSeconds = 0;
+  const video = filteredVideos[index];
+  const earnPerSecond = video.earn / 30;
+
+  watchTimer = setInterval(() => {
+    watchSeconds++;
+    videoEarned += earnPerSecond;
+    totalEarned += earnPerSecond;
+    updateTicker();
+    updateProgress(index);
+
+    // Flash ticker every 5 seconds
+    if (watchSeconds % 5 === 0) {
+      document.getElementById('earn-ticker').classList.add('pop');
+      setTimeout(() => document.getElementById('earn-ticker').classList.remove('pop'), 300);
+    }
+  }, 1000);
+
+  // Attention check after 15-25s
+  const delay = 15000 + Math.random() * 10000;
+  attentionTimer = setTimeout(() => {
+    if (watchSeconds > 10) showAttentionCheck();
+  }, delay);
+}
+
+function stopEarning() {
+  clearInterval(watchTimer);
+  clearTimeout(attentionTimer);
+  watchTimer = null;
+  localStorage.setItem('vr_v2_earned', totalEarned.toFixed(4));
+}
+
+function updateTicker() {
+  document.getElementById('ticker-val').textContent = 'RM ' + totalEarned.toFixed(3);
+  document.getElementById('wallet-amt').textContent = 'RM ' + totalEarned.toFixed(2);
+}
+
+function updateProgress(index) {
+  const vid = document.getElementById(`vid-${index}`);
+  if (!vid || !vid.duration) return;
+  const pct = (vid.currentTime / vid.duration) * 100;
+  document.getElementById('progress-fill').style.width = pct + '%';
+}
+
+// ── SWIPE NAVIGATION ──────────────────────────────────
+function setupSwipe() {
+  const stack = document.getElementById('video-stack');
+
+  // Touch
+  stack.addEventListener('touchstart', onTouchStart, {passive: true});
+  stack.addEventListener('touchmove', onTouchMove, {passive: false});
+  stack.addEventListener('touchend', onTouchEnd, {passive: true});
+
+  // Mouse (desktop)
+  stack.addEventListener('mousedown', e => { swipeStartY = e.clientY; swipeStartX = e.clientX; isSwiping = true; });
+  stack.addEventListener('mousemove', e => {
+    if (!isSwiping) return;
+    const dy = swipeStartY - e.clientY;
+    dragSlides(dy);
+  });
+  stack.addEventListener('mouseup', e => {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const dy = swipeStartY - e.clientY;
+    if (Math.abs(dy) > 60) dy > 0 ? goNext() : goPrev();
+    else snapBack();
+  });
+}
+
+let touchStartY = 0;
+let touchCurrentY = 0;
+
+function onTouchStart(e) {
+  touchStartY = e.touches[0].clientY;
+  touchCurrentY = touchStartY;
+}
+function onTouchMove(e) {
+  touchCurrentY = e.touches[0].clientY;
+  const dy = touchStartY - touchCurrentY;
+  if (Math.abs(dy) > 10) {
+    e.preventDefault();
+    dragSlides(dy);
+  }
+}
+function onTouchEnd() {
+  const dy = touchStartY - touchCurrentY;
+  if (dy > 60) goNext();
+  else if (dy < -60) goPrev();
+  else snapBack();
+}
+
+function dragSlides(dy) {
+  const curr = document.getElementById(`slide-${currentIndex}`);
+  const next = document.getElementById(`slide-${currentIndex + 1}`);
+  const prev = document.getElementById(`slide-${currentIndex - 1}`);
+
+  if (curr) curr.style.transition = 'none';
+
+  if (dy > 0 && next) {
+    curr.style.transform = `translateY(${-dy}px)`;
+    next.style.transition = 'none';
+    next.style.transform = `translateY(calc(100% - ${dy}px))`;
+  } else if (dy < 0 && prev) {
+    curr.style.transform = `translateY(${-dy}px)`;
+    prev.style.transition = 'none';
+    prev.style.transform = `translateY(calc(-100% - ${dy}px))`;
+  }
+}
+
+function snapBack() {
+  const curr = document.getElementById(`slide-${currentIndex}`);
+  if (curr) { curr.style.transition = ''; curr.style.transform = 'translateY(0%)'; }
+  const next = document.getElementById(`slide-${currentIndex + 1}`);
+  if (next) { next.style.transition = ''; next.style.transform = 'translateY(100%)'; }
+  const prev = document.getElementById(`slide-${currentIndex - 1}`);
+  if (prev) { prev.style.transition = ''; prev.style.transform = 'translateY(-100%)'; }
+}
+
+function goNext() {
+  if (currentIndex >= filteredVideos.length - 1) {
+    snapBack();
+    toast('You\'ve seen all videos — more coming soon! 🎬');
+    return;
+  }
+  // Show earn flash for completed video
+  showEarnFlash(videoEarned);
+
+  pauseVideo(currentIndex);
+  const curr = document.getElementById(`slide-${currentIndex}`);
+  const next = document.getElementById(`slide-${currentIndex + 1}`);
+  if (curr) { curr.style.transition = ''; curr.style.transform = 'translateY(-100%)'; }
+  if (next) { next.style.transition = ''; next.style.transform = 'translateY(0%)'; }
+
+  currentIndex++;
+  loadVideo(currentIndex);
+
+  // Hide swipe hint after first swipe
+  if (!shownSwipeHint) {
+    shownSwipeHint = true;
+    document.getElementById('swipe-hint').classList.add('hide');
+  }
+}
+
+function goPrev() {
+  if (currentIndex <= 0) { snapBack(); return; }
+  pauseVideo(currentIndex);
+  const curr = document.getElementById(`slide-${currentIndex}`);
+  const prev = document.getElementById(`slide-${currentIndex - 1}`);
+  if (curr) { curr.style.transition = ''; curr.style.transform = 'translateY(100%)'; }
+  if (prev) { prev.style.transition = ''; prev.style.transform = 'translateY(0%)'; }
+  currentIndex--;
+  loadVideo(currentIndex);
+}
+
+function showEarnFlash(amount) {
+  if (amount < 0.001) return;
+  const flash = document.createElement('div');
+  flash.className = 'earn-flash';
+  flash.textContent = '+RM ' + amount.toFixed(4);
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 900);
+}
+
+// ── MOOD FILTER ───────────────────────────────────────
+function setMood(btn, mood) {
+  document.querySelectorAll('.mood-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentMood = mood;
+  pauseVideo(currentIndex);
+  filteredVideos = mood === 'all' ? [...VIDEOS] : VIDEOS.filter(v => v.mood.includes(mood));
+  currentIndex = 0;
+  buildSlides();
+  setTimeout(() => loadVideo(0), 100);
+}
+
+// ── ATTENTION CHECK ───────────────────────────────────
+function showAttentionCheck() {
+  clearInterval(watchTimer);
+  document.getElementById('attention-overlay').classList.add('show');
+  const vid = document.getElementById(`vid-${currentIndex}`);
+  if (vid) vid.pause();
+}
+
+function confirmAttention() {
+  document.getElementById('attention-overlay').classList.remove('show');
+  const vid = document.getElementById(`vid-${currentIndex}`);
+  if (vid) vid.play().catch(() => { vid.muted = true; vid.play(); });
+  startEarning(currentIndex);
+  toast('Attention confirmed — keep earning! 💰');
+}
+
+// ── WALLET ────────────────────────────────────────────
+function openWallet() {
+  updateTicker();
+  document.getElementById('wallet-sheet').classList.add('open');
+}
+function closeWallet() { document.getElementById('wallet-sheet').classList.remove('open'); }
+function closeWalletOutside(e) { if (e.target === document.getElementById('wallet-sheet')) closeWallet(); }
+
+function openCashout(method, icon) {
+  cashoutMethod = method; cashoutIcon = icon;
+  closeWallet();
+  document.getElementById('co-method').textContent = method;
+  document.getElementById('co-icon').textContent = icon;
+  document.getElementById('co-dest').textContent = method;
+  document.getElementById('co-amount').textContent = 'RM ' + totalEarned.toFixed(2);
+  document.getElementById('cashout-confirm').classList.add('show');
+}
+
+function closeCashout() { document.getElementById('cashout-confirm').classList.remove('show'); }
+
+function confirmCashout() {
+  const amount = totalEarned.toFixed(2);
+  totalEarned = 0;
+  localStorage.setItem('vr_v2_earned', '0');
+  updateTicker();
+  closeCashout();
+  toast(`🎉 RM ${amount} sent to ${cashoutMethod}!`);
+}
+
+// ── SOCIAL ACTIONS ────────────────────────────────────
+function toggleLike(index) {
+  const btn = document.getElementById(`like-${index}`);
+  if (!btn) return;
+  if (likedVideos.has(index)) {
+    likedVideos.delete(index);
+    btn.classList.remove('liked');
+    btn.querySelector('.action-icon').textContent = '❤️';
+  } else {
+    likedVideos.add(index);
+    btn.classList.add('liked');
+    btn.querySelector('.action-icon').textContent = '❤️';
+    btn.style.transform = 'scale(1.3)';
+    setTimeout(() => btn.style.transform = '', 300);
+  }
+}
+
+function followCreator(e, name) {
+  e.stopPropagation();
+  toast(`Following ${name} 🔔`);
+}
+
+function shareVideo(index) {
+  const v = filteredVideos[index];
+  if (navigator.share) {
+    navigator.share({ title: v.title, text: `Watch this on ViewR and earn RM ${v.earn.toFixed(2)}!`, url: window.location.href });
+  } else {
+    toast('Link copied! Share ViewR with friends 🔗');
+  }
+  // Bonus earn for sharing
+  totalEarned += 0.05;
+  updateTicker();
+  toast('You earned +RM 0.05 for sharing! 🎉');
+}
+
+function showFeed() { toast('You\'re already on the feed! 😄'); }
+
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
