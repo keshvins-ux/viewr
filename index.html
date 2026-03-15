@@ -475,6 +475,8 @@ function startEarning(index) {
   const eps = v.earn / 30; // earn per second
 
   watchTimer = setInterval(() => {
+    // Triple safety — never earn if app backgrounded, tab hidden, or paused
+    if (!appIsVisible || document.hidden || isPaused) return;
     watchSeconds++;
     videoEarned += eps;
     totalEarned += eps;
@@ -706,6 +708,59 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+// ── VISIBILITY / BACKGROUND DETECTION ────────────────
+// This is critical — earning MUST stop when app is backgrounded
+// Advertisers only pay for real foreground attention
+
+let appIsVisible = true;
+
+function handleVisibilityChange() {
+  if (document.hidden || document.visibilityState === 'hidden') {
+    // App went to background — stop everything immediately
+    appIsVisible = false;
+    stopEarning();
+    const vid = document.getElementById(`vid-${currentIndex}`);
+    if (vid) vid.pause();
+    showToast('Earning paused — come back to keep earning 💰');
+  } else {
+    // App came back to foreground
+    appIsVisible = true;
+    if (!isPaused) {
+      const vid = document.getElementById(`vid-${currentIndex}`);
+      if (vid) {
+        vid.play().catch(() => { vid.muted = true; vid.play(); });
+      }
+      startEarning(currentIndex);
+      showToast('Earning resumed! 💰');
+    }
+  }
+}
+
+// Standard Page Visibility API
+document.addEventListener('visibilitychange', handleVisibilityChange);
+
+// iOS Safari fallback — fires when user switches apps or locks screen
+window.addEventListener('blur', () => {
+  appIsVisible = false;
+  stopEarning();
+  const vid = document.getElementById(`vid-${currentIndex}`);
+  if (vid) vid.pause();
+});
+
+window.addEventListener('focus', () => {
+  if (!document.hidden) {
+    appIsVisible = true;
+    if (!isPaused) {
+      const vid = document.getElementById(`vid-${currentIndex}`);
+      if (vid) vid.play().catch(() => { vid.muted = true; vid.play(); });
+      startEarning(currentIndex);
+    }
+  }
+});
+
+// Also guard inside the earning interval itself — double safety net
+// Modified in startEarning below to check appIsVisible on every tick
 
 // ── INIT ──────────────────────────────────────────────
 window.addEventListener('load', () => {
