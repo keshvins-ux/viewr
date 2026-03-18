@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"/>
+<meta name="theme-color" content="#0a0f1e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="DayFlow"/>
+<title>DayFlow — Your day, decided.</title>
+<link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@400;500;700;800;900&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#0a0f1e; --bg2:#111827; --bg3:#1a2235; --surface:#1e2d42;
+  --border:rgba(255,255,255,0.07); --border2:rgba(255,255,255,0.13);
+  --text:#F0F4F8; --text2:#8A9BB0; --text3:#4A5568;
+  --blue:#3B82F6; --blue-dim:rgba(59,130,246,0.14);
+  --green:#10B981; --green-dim:rgba(16,185,129,0.14);
+  --amber:#F59E0B; --amber-dim:rgba(245,158,11,0.14);
+  --coral:#F97316; --coral-dim:rgba(249,115,22,0.14);
+  --purple:#8B5CF6; --purple-dim:rgba(139,92,246,0.14);
+  --red:#EF4444; --red-dim:rgba(239,68,68,0.14);
+  --teal:#06B6D4; --teal-dim:rgba(6,182,212,0.14);
+  --fd:'Cabinet Grotesk',sans-serif;
+  --fb:'Instrument Sans',sans-serif;
+  --st:env(safe-area-inset-top,0px);
+  --sb:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;font-family:var(--fb);background:var(--bg);color:var(--text);}
+body{display:flex;flex-direction:column;max-width:430px;margin:0 auto;position:relative;}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity 0.6s;}
+#splash.hide{opacity:0;pointer-events:none;}
+.sp-icon{font-size:52px;margin-bottom:16px;animation:spFloat 2s ease-in-out infinite;}
+@keyframes spFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.sp-logo{font-family:var(--fd);font-size:38px;font-weight:900;letter-spacing:-2px;}
+.sp-logo b{color:var(--blue);}
+.sp-tag{font-size:13px;color:var(--text2);margin-top:6px;}
+.sp-bar{width:120px;height:2px;background:var(--surface);border-radius:2px;margin-top:32px;overflow:hidden;}
+.sp-fill{height:100%;background:var(--blue);border-radius:2px;animation:spLoad 1.8s ease forwards;}
+@keyframes spLoad{from{width:0%}to{width:100%}}
+
+/* ── LAYOUT ── */
+.screen{display:none;flex-direction:column;height:100%;overflow:hidden;}
+.screen.active{display:flex;}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:16px;}
+.scroll::-webkit-scrollbar{display:none;}
+
+/* ── STATUS BAR ── */
+.sbar{padding:calc(var(--st) + 10px) 18px 10px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.sbar-logo{font-family:var(--fd);font-size:19px;font-weight:900;letter-spacing:-0.8px;}
+.sbar-logo b{color:var(--blue);}
+.sbar-right{display:flex;align-items:center;gap:8px;}
+.sbar-time{font-size:12px;color:var(--text2);}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:ldot 2s infinite;}
+@keyframes ldot{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── BOTTOM NAV ── */
+.bnav{background:var(--bg2);border-top:0.5px solid var(--border);display:flex;padding-bottom:var(--sb);flex-shrink:0;}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 0 7px;font-size:10px;color:var(--text3);border:none;background:none;cursor:pointer;font-family:var(--fb);transition:color 0.15s;position:relative;}
+.nb.active{color:var(--blue);}
+.nb-ic{font-size:22px;line-height:1;}
+.nb-badge{position:absolute;top:6px;right:calc(50% - 20px);min-width:16px;height:16px;border-radius:8px;background:var(--red);color:white;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;padding:0 4px;}
+
+/* ── HOME SCREEN ── */
+.h-header{padding:18px 18px 0;flex-shrink:0;}
+.h-greeting{font-size:12px;color:var(--text2);margin-bottom:4px;}
+.h-title{font-family:var(--fd);font-size:26px;font-weight:900;letter-spacing:-1px;line-height:1.1;}
+.h-title b{color:var(--blue);}
+.h-sub{font-size:13px;color:var(--text2);margin-top:6px;line-height:1.5;}
+
+/* ── NUDGE CARDS ── */
+.nudge-section{padding:16px 18px 0;}
+.ns-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;}
+.nudge-card{background:var(--bg2);border-radius:18px;padding:0;margin-bottom:10px;border:0.5px solid var(--border);overflow:hidden;cursor:pointer;transition:border-color 0.2s;position:relative;}
+.nudge-card:hover{border-color:var(--border2);}
+.nudge-card.expanded{border-color:var(--border2);}
+.nc-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:3px 0 0 3px;}
+.nc-top{display:flex;gap:12px;align-items:flex-start;padding:14px 14px 14px 18px;}
+.nc-icon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.nc-meta{flex:1;min-width:0;}
+.nc-cat{font-size:10px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:3px;}
+.nc-title{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--text);line-height:1.3;}
+.nc-rec{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:500;margin-top:6px;}
+.nc-chev{font-size:15px;color:var(--text3);flex-shrink:0;transition:transform 0.25s;margin-top:2px;}
+.nudge-card.expanded .nc-chev{transform:rotate(180deg);}
+.nc-body{max-height:0;overflow:hidden;transition:max-height 0.38s cubic-bezier(0.4,0,0.2,1);}
+.nc-body.open{max-height:700px;}
+.nc-inner{padding:0 14px 14px 18px;}
+.nc-divider{height:0.5px;background:var(--border);margin-bottom:12px;}
+.nc-desc{font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:12px;}
+
+/* OPTIONS */
+.opt-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border);}
+.opt-row:last-child{border-bottom:none;}
+.opt-rank{width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:var(--fd);flex-shrink:0;}
+.opt-info{flex:1;min-width:0;}
+.opt-name{font-size:13px;font-weight:500;color:var(--text);}
+.opt-detail{font-size:11px;color:var(--text2);margin-top:1px;line-height:1.4;}
+.opt-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;}
+.opt-price{font-size:13px;font-weight:700;font-family:var(--fd);}
+.opt-badge{font-size:9px;font-weight:500;padding:2px 6px;border-radius:20px;}
+
+/* FOOD SCROLL */
+.food-scroll{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin:8px 0;}
+.food-scroll::-webkit-scrollbar{display:none;}
+.food-opt{background:var(--bg3);border-radius:14px;padding:12px;border:0.5px solid var(--border);flex-shrink:0;width:148px;cursor:pointer;transition:border-color 0.15s;}
+.food-opt:hover{border-color:var(--border2);}
+.food-opt.sel{border-color:var(--green);}
+.fo-emoji{font-size:26px;margin-bottom:7px;}
+.fo-name{font-size:12px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.fo-meta{font-size:11px;color:var(--text2);}
+.fo-tag{font-size:10px;padding:2px 7px;border-radius:20px;display:inline-block;margin-top:5px;}
+
+/* ACTION BUTTONS */
+.act-row{display:flex;gap:6px;margin-top:12px;}
+.act-btn{flex:1;border:none;border-radius:11px;padding:11px 8px;font-size:12px;font-weight:500;cursor:pointer;font-family:var(--fd);transition:opacity 0.15s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.act-btn:active{opacity:0.8;}
+.act-primary{background:var(--blue);color:white;}
+.act-secondary{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);}
+.act-green{background:var(--green);color:white;}
+.act-amber{background:var(--amber);color:#1a0a00;}
+
+/* DISMISS */
+.nc-dismiss{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;z-index:5;padding:2px 4px;}
+
+/* ── TIMELINE ── */
+.tl-section{padding:16px 18px 0;}
+.tl-item{display:flex;gap:10px;margin-bottom:2px;}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;}
+.tl-time{font-size:10px;color:var(--text3);font-family:var(--fd);font-weight:500;white-space:nowrap;text-align:right;width:100%;}
+.tl-dot{width:9px;height:9px;border-radius:50%;margin:5px auto;flex-shrink:0;}
+.tl-line{width:1px;flex:1;min-height:8px;margin:0 auto;}
+.tl-body{flex:1;padding-bottom:12px;}
+.tl-card{background:var(--bg2);border-radius:13px;padding:11px 13px;border:0.5px solid var(--border);}
+.tl-card.now{border-color:var(--blue);}
+.tl-ctitle{font-size:13px;font-weight:500;color:var(--text);margin-bottom:2px;}
+.tl-csub{font-size:11px;color:var(--text2);line-height:1.5;}
+.tl-ctag{display:inline-block;font-size:10px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:5px;}
+
+/* STATS */
+.stats-row{display:flex;gap:10px;padding:16px 18px 0;}
+.stat-c{flex:1;background:var(--bg2);border-radius:13px;padding:12px 10px;text-align:center;border:0.5px solid var(--border);}
+.stat-v{font-family:var(--fd);font-size:20px;font-weight:800;color:var(--text);}
+.stat-l{font-size:10px;color:var(--text3);margin-top:3px;}
+
+/* ASK BAR */
+.ask-wrap{padding:14px 18px 0;}
+.ask-bar{background:var(--bg2);border-radius:14px;padding:12px 14px;border:0.5px solid var(--border2);display:flex;gap:10px;align-items:center;cursor:pointer;transition:border-color 0.2s;}
+.ask-bar:hover{border-color:var(--blue);}
+.ask-text{font-size:13px;color:var(--text3);flex:1;}
+.ask-ai{font-size:11px;padding:4px 10px;border-radius:20px;background:var(--blue-dim);color:var(--blue);font-weight:500;white-space:nowrap;}
+
+/* ── NOTIFICATIONS SCREEN ── */
+.notif-hdr{padding:16px 18px 0;flex-shrink:0;}
+.notif-title{font-family:var(--fd);font-size:24px;font-weight:900;letter-spacing:-1px;}
+.notif-sub{font-size:13px;color:var(--text2);margin-top:3px;}
+.nf-filters{display:flex;gap:7px;padding:13px 18px 0;overflow-x:auto;flex-shrink:0;}
+.nf-filters::-webkit-scrollbar{display:none;}
+.nff{padding:6px 14px;border-radius:20px;font-size:11px;font-weight:500;border:0.5px solid var(--border2);background:none;color:var(--text2);cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0;}
+.nff.active{background:var(--blue);color:white;border-color:var(--blue);}
+.ngroup{padding:14px 18px 0;}
+.ng-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;}
+.ni{background:var(--bg2);border-radius:14px;padding:13px;margin-bottom:8px;border:0.5px solid var(--border);display:flex;gap:11px;align-items:flex-start;position:relative;transition:border-color 0.15s;}
+.ni.unread{border-color:var(--border2);}
+.ni-dot{position:absolute;top:13px;right:13px;width:7px;height:7px;border-radius:50%;background:var(--blue);}
+.ni-ic{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.ni-body{flex:1;min-width:0;padding-right:14px;}
+.ni-title{font-size:13px;font-weight:500;color:var(--text);line-height:1.4;margin-bottom:2px;}
+.ni-sub{font-size:12px;color:var(--text2);line-height:1.5;}
+.ni-time{font-size:10px;color:var(--text3);margin-top:4px;}
+.ni-acts{display:flex;gap:6px;margin-top:8px;}
+.ni-btn{padding:5px 12px;border-radius:8px;font-size:11px;font-weight:500;cursor:pointer;border:none;font-family:var(--fb);transition:opacity 0.15s;}
+.ni-btn:active{opacity:0.8;}
+.ni-p{background:var(--blue);color:white;}
+.ni-s{background:var(--bg3);color:var(--text2);border:0.5px solid var(--border2);}
+.ni-g{background:var(--green);color:white;}
+.ni-a{background:var(--amber);color:#1a0a00;}
+
+/* ── AI SHEET ── */
+#ai-sheet{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:200;display:none;align-items:flex-end;backdrop-filter:blur(8px);max-width:430px;margin:0 auto;}
+#ai-sheet.open{display:flex;}
+.ai-body{background:var(--bg2);border-radius:26px 26px 0 0;padding:20px 18px;padding-bottom:calc(20px + var(--sb));width:100%;max-height:88vh;overflow-y:auto;animation:sUp 0.3s cubic-bezier(0.32,0.72,0,1);}
+@keyframes sUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.ai-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 18px;}
+.ai-hdr{display:flex;align-items:center;gap:10px;margin-bottom:16px;}
+.ai-av{width:42px;height:42px;border-radius:13px;background:var(--blue-dim);border:0.5px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:22px;}
+.ai-nm{font-family:var(--fd);font-size:17px;font-weight:800;}
+.ai-st{font-size:11px;color:var(--green);margin-top:1px;}
+.ai-msgs{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;min-height:60px;}
+.ai-msg{padding:11px 13px;border-radius:14px;font-size:13px;line-height:1.65;max-width:88%;}
+.ai-msg.bot{background:var(--bg3);color:var(--text);border:0.5px solid var(--border);align-self:flex-start;}
+.ai-msg.usr{background:var(--blue);color:white;align-self:flex-end;}
+.ai-thinking{display:flex;align-items:center;gap:5px;padding:10px 13px;background:var(--bg3);border-radius:14px;width:fit-content;display:none;}
+.ai-thinking.show{display:flex;}
+.ai-td{width:7px;height:7px;border-radius:50%;background:var(--text2);animation:atd 1.2s ease-in-out infinite;}
+.ai-td:nth-child(2){animation-delay:0.2s;}
+.ai-td:nth-child(3){animation-delay:0.4s;}
+@keyframes atd{0%,100%{opacity:0.3;transform:scale(0.7)}50%{opacity:1;transform:scale(1.1)}}
+.qreplies{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+.qr{padding:7px 12px;border-radius:20px;font-size:12px;font-weight:500;background:var(--bg3);border:0.5px solid var(--border2);color:var(--text2);cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.qr:hover{border-color:var(--blue);color:var(--text);}
+.ai-inp-row{display:flex;gap:8px;}
+.ai-inp{flex:1;background:var(--bg3);border:0.5px solid var(--border2);border-radius:12px;padding:11px 13px;font-size:14px;color:var(--text);font-family:var(--fb);outline:none;}
+.ai-inp:focus{border-color:var(--blue);}
+.ai-send{background:var(--blue);border:none;border-radius:12px;width:44px;height:44px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity 0.15s;}
+.ai-send:active{opacity:0.8;}
+
+/* ── SETTINGS ── */
+.set-hdr{padding:16px 18px 0;flex-shrink:0;}
+.set-title{font-family:var(--fd);font-size:24px;font-weight:900;letter-spacing:-1px;}
+.set-sub{font-size:13px;color:var(--text2);margin-top:3px;}
+.set-sec{padding:16px 18px 0;}
+.set-lbl{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:10px;}
+.set-card{background:var(--bg2);border-radius:16px;overflow:hidden;border:0.5px solid var(--border);margin-bottom:12px;}
+.set-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:0.5px solid var(--border);cursor:pointer;transition:background 0.15s;}
+.set-row:last-child{border-bottom:none;}
+.set-row:hover{background:var(--bg3);}
+.set-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.set-info{flex:1;}
+.set-lbl2{font-size:14px;color:var(--text);font-weight:500;}
+.set-val{font-size:11px;color:var(--text2);margin-top:1px;}
+.toggle{width:46px;height:27px;border-radius:14px;background:var(--surface);position:relative;cursor:pointer;transition:background 0.2s;flex-shrink:0;}
+.toggle.on{background:var(--blue);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:white;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+.toggle.on::after{transform:translateX(19px);}
+.feedback-card{margin:0 18px 16px;background:var(--bg2);border-radius:16px;padding:16px;border:0.5px solid var(--border2);}
+.fb-title{font-family:var(--fd);font-size:15px;font-weight:700;margin-bottom:8px;}
+.fb-sub{font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.6;}
+.star-row{display:flex;gap:6px;margin-bottom:12px;}
+.star{font-size:28px;cursor:pointer;opacity:0.35;transition:opacity 0.15s,transform 0.1s;}
+.star.on{opacity:1;}
+.star:active{transform:scale(1.2);}
+.fb-input{width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:12px;padding:10px 13px;font-size:13px;color:var(--text);font-family:var(--fb);outline:none;min-height:70px;resize:none;display:block;margin-bottom:10px;}
+.fb-input:focus{border-color:var(--blue);}
+.fb-btn{width:100%;background:var(--blue);color:white;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:var(--fd);}
+
+/* TOAST */
+#toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:var(--bg3);border:0.5px solid var(--border2);color:var(--text);padding:10px 18px;border-radius:20px;font-size:13px;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;z-index:600;max-width:360px;text-align:center;}
+#toast.show{opacity:1;}
+
+/* ANIMATIONS */
+.fi{animation:fadeIn 0.4s ease both;}
+.s1{animation-delay:0.05s;}.s2{animation-delay:0.1s;}.s3{animation-delay:0.15s;}.s4{animation-delay:0.2s;}.s5{animation-delay:0.25s;}.s6{animation-delay:0.3s;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- ── SPLASH ── -->
+<div id="splash">
+  <div class="sp-icon">🧠</div>
+  <div class="sp-logo">Day<b>Flow</b></div>
+  <div class="sp-tag">Your day, decided.</div>
+  <div class="sp-bar"><div class="sp-fill"></div></div>
+</div>
+
+<!-- ══════════ HOME ══════════ -->
+<div class="screen active" id="s-home">
+  <div class="sbar">
+    <div class="sbar-logo">Day<b>Flow</b></div>
+    <div class="sbar-right">
+      <div class="live-dot"></div>
+      <span class="sbar-time" id="sbar-time">7:30 AM</span>
+    </div>
+  </div>
+
+  <div class="scroll">
+    <!-- HEADER -->
+    <div class="h-header fi">
+      <div class="h-greeting" id="h-greeting">Good morning 👋</div>
+      <div class="h-title">Here's your day,<br/><b>already decided.</b></div>
+      <div class="h-sub" id="h-sub">7 decisions handled · 0 things to figure out · Tap any card to see why.</div>
+    </div>
+
+    <!-- STATS -->
+    <div class="stats-row fi s1">
+      <div class="stat-c"><div class="stat-v" id="stat-saved">47</div><div class="stat-l">mins saved</div></div>
+      <div class="stat-c"><div class="stat-v" id="stat-nudges">7</div><div class="stat-l">nudges today</div></div>
+      <div class="stat-c"><div class="stat-v" id="stat-streak">3</div><div class="stat-l">day streak</div></div>
+    </div>
+
+    <!-- TODAY'S NUDGES -->
+    <div class="nudge-section fi s2">
+      <div class="ns-label">Today's decisions</div>
+
+      <!-- TRAVEL CARD -->
+      <div class="nudge-card" id="card-travel" onclick="toggleCard('travel')">
+        <div class="nc-stripe" style="background:var(--blue);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--blue-dim);">🗺️</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Travel · 3 stops today</div>
+            <div class="nc-title">Optimal route sorted — leave by 8:45 AM</div>
+            <div class="nc-rec" style="background:var(--green-dim);color:var(--green);">✓ Saves 38 min vs any other order</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-travel">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">Based on your calendar, traffic and opening times — here's the smartest sequence for your 3 stops today.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">1</div>
+              <div class="opt-info">
+                <div class="opt-name">🏥 Klinik Kesihatan Cheras</div>
+                <div class="opt-detail">9:00 AM · 12 min from home · Opens 8:30 AM</div>
+              </div>
+              <div class="opt-right">
+                <span class="opt-badge" style="background:var(--blue-dim);color:var(--blue);">First</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">2</div>
+              <div class="opt-info">
+                <div class="opt-name">🏢 Menara CIMB, KL Sentral</div>
+                <div class="opt-detail">11:00 AM · 18 min from clinic · En-route</div>
+              </div>
+              <div class="opt-right">
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">En-route</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">3</div>
+              <div class="opt-info">
+                <div class="opt-name">🛒 Giant Hypermarket, Cheras</div>
+                <div class="opt-detail">5:30 PM · 8 min from office · On way home</div>
+              </div>
+              <div class="opt-right">
+                <span class="opt-badge" style="background:var(--amber-dim);color:var(--amber);">Last</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-primary" onclick="doAction(event,'Opening Google Maps with your optimised route...')">📍 Open in Maps</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Route adjusted!')">✏️ Adjust</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TRANSPORT CARD -->
+      <div class="nudge-card" id="card-transport" onclick="toggleCard('transport')">
+        <div class="nc-stripe" style="background:var(--teal);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--teal-dim);">🚗</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Transport · KL Sentral meeting</div>
+            <div class="nc-title">MRT is cheapest — Grab costs RM 11 more</div>
+            <div class="nc-rec" style="background:var(--teal-dim);color:var(--teal);">✓ MRT recommended · Saves RM 11.40</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-transport">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">Live comparison for your 11AM meeting at KL Sentral. Grab has slight surge right now.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--green-dim);color:var(--green);">🏆</div>
+              <div class="opt-info">
+                <div class="opt-name">🚇 MRT — Cheras to KL Sentral</div>
+                <div class="opt-detail">32 min · No surge · Walk 4 min to office</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--green);">RM 2.80</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">Best</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">2</div>
+              <div class="opt-info">
+                <div class="opt-name">🟢 Grab — Door to door</div>
+                <div class="opt-detail">22 min · Surge 1.4x · Driver 6 min away</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--coral);">RM 14.20</div>
+                <span class="opt-badge" style="background:var(--coral-dim);color:var(--coral);">Surge</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">3</div>
+              <div class="opt-info">
+                <div class="opt-name">⚡ Bolt — Door to door</div>
+                <div class="opt-detail">24 min · No surge · Driver 9 min away</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--amber);">RM 11.60</div>
+                <span class="opt-badge" style="background:var(--amber-dim);color:var(--amber);">OK</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-primary" onclick="doAction(event,'Opening MRT route in maps...')">🚇 Take MRT</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Opening Grab...')">🟢 Book Grab</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOD CARD -->
+      <div class="nudge-card" id="card-food" onclick="toggleCard('food')">
+        <div class="nc-stripe" style="background:var(--coral);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--coral-dim);">🍜</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Food · Lunch near KL Sentral</div>
+            <div class="nc-title">3 great spots en-route to your meeting</div>
+            <div class="nc-rec" style="background:var(--coral-dim);color:var(--coral);">✓ All within 5 min walk · Under RM 25</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-food">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">Based on your 11AM meeting location and your usual RM 15–25 lunch range. All highly rated.</div>
+            <div class="food-scroll">
+              <div class="food-opt" id="fo1" onclick="selectFood(event,'fo1')">
+                <div class="fo-emoji">🍛</div>
+                <div class="fo-name">Nasi Kandar Pelita</div>
+                <div class="fo-meta">4.5★ · RM 12–18 · 3 min walk</div>
+                <div class="fo-tag" style="background:var(--green-dim);color:var(--green);">Open now</div>
+              </div>
+              <div class="food-opt" id="fo2" onclick="selectFood(event,'fo2')">
+                <div class="fo-emoji">🥗</div>
+                <div class="fo-name">Merchant's Lane</div>
+                <div class="fo-meta">4.7★ · RM 18–28 · 5 min walk</div>
+                <div class="fo-tag" style="background:var(--blue-dim);color:var(--blue);">Trending</div>
+              </div>
+              <div class="food-opt" id="fo3" onclick="selectFood(event,'fo3')">
+                <div class="fo-emoji">🍱</div>
+                <div class="fo-name">Bento box — Isetan B2</div>
+                <div class="fo-meta">4.3★ · RM 14–20 · In building</div>
+                <div class="fo-tag" style="background:var(--amber-dim);color:var(--amber);">Quick</div>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-green" onclick="doAction(event,'Saving your lunch pick!')">✓ Save choice</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Showing more options nearby...')">🔍 More options</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PARKING CARD -->
+      <div class="nudge-card" id="card-parking" onclick="toggleCard('parking')">
+        <div class="nc-stripe" style="background:var(--amber);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--amber-dim);">🅿️</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Parking · Giant Hypermarket 5:30 PM</div>
+            <div class="nc-title">Basement 2 usually full by 6 PM Fridays</div>
+            <div class="nc-rec" style="background:var(--amber-dim);color:var(--amber);">⚠️ Go before 5:45 PM or try Level 4</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-parking">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">Based on historical patterns for this location on Friday evenings.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--green-dim);color:var(--green);">🏆</div>
+              <div class="opt-info">
+                <div class="opt-name">🅿️ Level 4 — Open air</div>
+                <div class="opt-detail">Usually 40–60% full at 5:30 PM · Free with receipt</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--green);">Free</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">Available</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--amber-dim);color:var(--amber);">2</div>
+              <div class="opt-info">
+                <div class="opt-name">🅿️ Basement 2 — Covered</div>
+                <div class="opt-detail">Usually 90%+ full by 6 PM on Fridays</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--amber);">Free</div>
+                <span class="opt-badge" style="background:var(--red-dim);color:var(--red);">Near full</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">3</div>
+              <div class="opt-info">
+                <div class="opt-name">🅿️ Street parking — Jalan 2/109</div>
+                <div class="opt-detail">2 min walk · Paid · RM 1/hr</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--text2);">RM 1/hr</div>
+                <span class="opt-badge" style="background:var(--blue-dim);color:var(--blue);">Backup</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-amber" onclick="doAction(event,'Setting reminder to leave for Giant by 5:20 PM!')">⏰ Remind me 5:20 PM</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BILLS CARD -->
+      <div class="nudge-card" id="card-bills" onclick="toggleCard('bills')">
+        <div class="nc-stripe" style="background:var(--green);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--green-dim);">💳</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Bills · From your SMS inbox</div>
+            <div class="nc-title">2 bills due soon — RM 330 total</div>
+            <div class="nc-rec" style="background:var(--red-dim);color:var(--red);">⚠️ Maybank due tomorrow</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-bills">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">DayFlow read these from your SMS notifications automatically. No manual entry needed.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--red-dim);color:var(--red);">!</div>
+              <div class="opt-info">
+                <div class="opt-name">🏦 Maybank credit card</div>
+                <div class="opt-detail">Due tomorrow · Minimum RM 50 · Full RM 245</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--red);">RM 245</div>
+                <span class="opt-badge" style="background:var(--red-dim);color:var(--red);">Tomorrow</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--amber-dim);color:var(--amber);">2</div>
+              <div class="opt-info">
+                <div class="opt-name">📱 Maxis postpaid</div>
+                <div class="opt-detail">Due in 5 days · Auto-debit on 21st</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--amber);">RM 85</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">Auto-pay ✓</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-green" onclick="doAction(event,'Opening Maybank app to pay now...')">💳 Pay Maybank now</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Reminder set for 8 PM tonight!')">⏰ Remind tonight</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DOCUMENTS CARD -->
+      <div class="nudge-card" id="card-docs" onclick="toggleCard('docs')">
+        <div class="nc-stripe" style="background:var(--purple);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--purple-dim);">📋</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Documents · Expiry alerts</div>
+            <div class="nc-title">Road tax expires in 18 days — renew online</div>
+            <div class="nc-rec" style="background:var(--purple-dim);color:var(--purple);">✓ Takes 5 min via MyEG · RM 90</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-docs">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">DayFlow tracks your document expiries so you're never caught off guard by JPJ or at a roadblock.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--amber-dim);color:var(--amber);">⚠️</div>
+              <div class="opt-info">
+                <div class="opt-name">🚗 Road tax — WXX 1234</div>
+                <div class="opt-detail">Expires 3 April 2026 · Renew via MyEG online</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--amber);">18 days</div>
+                <span class="opt-badge" style="background:var(--amber-dim);color:var(--amber);">Soon</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--green-dim);color:var(--green);">✓</div>
+              <div class="opt-info">
+                <div class="opt-name">🛡️ Car insurance — Etiqa</div>
+                <div class="opt-detail">Expires 15 August 2026 · Auto-renews</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--green);">5 months</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">OK</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--green-dim);color:var(--green);">✓</div>
+              <div class="opt-info">
+                <div class="opt-name">🪪 MyKad</div>
+                <div class="opt-detail">No expiry · Valid</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--green);">Valid</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">OK</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-primary" onclick="doAction(event,'Opening MyEG road tax renewal...')">🌐 Renew via MyEG</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Reminder set for next week!')">⏰ Remind later</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEALTH CARD -->
+      <div class="nudge-card" id="card-health" onclick="toggleCard('health')">
+        <div class="nc-stripe" style="background:var(--red);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--red-dim);">💊</div>
+          <div class="nc-meta">
+            <div class="nc-cat">Health · Medication & appointments</div>
+            <div class="nc-title">Morning medication + doctor at 9 AM today</div>
+            <div class="nc-rec" style="background:var(--red-dim);color:var(--red);">⚠️ Take Metformin before breakfast</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-health">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">From your clinic SMS and medication schedule. Your 9 AM appointment is already in your travel plan above.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--red-dim);color:var(--red);">!</div>
+              <div class="opt-info">
+                <div class="opt-name">💊 Metformin 500mg</div>
+                <div class="opt-detail">Take with breakfast · Before 8:30 AM today</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--red);">Now</div>
+                <span class="opt-badge" style="background:var(--red-dim);color:var(--red);">Due</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">📅</div>
+              <div class="opt-info">
+                <div class="opt-name">🏥 Dr. Siti — Klinik Kesihatan Cheras</div>
+                <div class="opt-detail">9:00 AM today · Bring IC + referral letter</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--blue);">9 AM</div>
+                <span class="opt-badge" style="background:var(--blue-dim);color:var(--blue);">Today</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--amber-dim);color:var(--amber);">📅</div>
+              <div class="opt-info">
+                <div class="opt-name">🩺 Blood test follow-up</div>
+                <div class="opt-detail">Next Thursday 10 AM · Pusat Perubatan KL</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--amber);">Thu</div>
+                <span class="opt-badge" style="background:var(--amber-dim);color:var(--amber);">Next week</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-primary" onclick="doAction(event,'Medication marked as taken ✓')">💊 Taken</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Opening clinic directions...')">📍 Clinic directions</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WHATSAPP BOOKING CARD -->
+      <div class="nudge-card" id="card-wa" onclick="toggleCard('wa')">
+        <div class="nc-stripe" style="background:var(--green);"></div>
+        <div class="nc-top">
+          <div class="nc-icon" style="background:var(--green-dim);">💬</div>
+          <div class="nc-meta">
+            <div class="nc-cat">WhatsApp · Booking detected</div>
+            <div class="nc-title">Haircut at 3 PM — Seng Huat Barber SS15</div>
+            <div class="nc-rec" style="background:var(--green-dim);color:var(--green);">✓ Added to your day · Leave office by 2:30 PM</div>
+          </div>
+          <div class="nc-chev">▾</div>
+        </div>
+        <div class="nc-body" id="body-wa">
+          <div class="nc-inner">
+            <div class="nc-divider"></div>
+            <div class="nc-desc">DayFlow detected an appointment in your WhatsApp conversation with "Seng Huat Barber" and added it to your day automatically.</div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--green-dim);color:var(--green);">💬</div>
+              <div class="opt-info">
+                <div class="opt-name">✂️ Haircut — Seng Huat Barber SS15</div>
+                <div class="opt-detail">Today 3:00 PM · Booked via WhatsApp at 9:42 PM yesterday</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--green);">3 PM</div>
+                <span class="opt-badge" style="background:var(--green-dim);color:var(--green);">Confirmed</span>
+              </div>
+            </div>
+            <div class="opt-row">
+              <div class="opt-rank" style="background:var(--blue-dim);color:var(--blue);">🚗</div>
+              <div class="opt-info">
+                <div class="opt-name">Best way to get there from KL Sentral</div>
+                <div class="opt-detail">Grab — RM 9.20 · 24 min · Leave 2:30 PM</div>
+              </div>
+              <div class="opt-right">
+                <div class="opt-price" style="color:var(--blue);">RM 9.20</div>
+                <span class="opt-badge" style="background:var(--blue-dim);color:var(--blue);">Suggested</span>
+              </div>
+            </div>
+            <div class="act-row">
+              <button class="act-btn act-green" onclick="doAction(event,'Reminder set: Leave office at 2:30 PM!')">⏰ Remind 2:30 PM</button>
+              <button class="act-btn act-secondary" onclick="doAction(event,'Opening Grab to pre-book...')">🟢 Pre-book Grab</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="tl-section fi s3">
+      <div class="ns-label">Today's timeline</div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">8:45</div><div class="tl-dot" style="background:var(--blue);"></div><div class="tl-line" style="background:var(--border2);"></div></div>
+        <div class="tl-body"><div class="tl-card now"><div class="tl-ctitle">Leave home → Klinik Kesihatan</div><div class="tl-csub">MRT from Salak Selatan · 28 min</div><div class="tl-ctag" style="background:var(--blue-dim);color:var(--blue);">Travel</div></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">9:00</div><div class="tl-dot" style="background:var(--red);"></div><div class="tl-line" style="background:var(--border2);"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-ctitle">Dr. Siti — Klinik Kesihatan Cheras</div><div class="tl-csub">Bring IC + referral letter</div><div class="tl-ctag" style="background:var(--red-dim);color:var(--red);">Health</div></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">12:30</div><div class="tl-dot" style="background:var(--coral);"></div><div class="tl-line" style="background:var(--border2);"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-ctitle">Lunch — Nasi Kandar Pelita</div><div class="tl-csub">3 min walk from Menara CIMB · RM 12–18</div><div class="tl-ctag" style="background:var(--coral-dim);color:var(--coral);">Food</div></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">2:30</div><div class="tl-dot" style="background:var(--green);"></div><div class="tl-line" style="background:var(--border2);"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-ctitle">Leave office → Seng Huat Barber</div><div class="tl-csub">Grab · RM 9.20 · 24 min</div><div class="tl-ctag" style="background:var(--green-dim);color:var(--green);">WhatsApp booking</div></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">5:20</div><div class="tl-dot" style="background:var(--amber);"></div><div class="tl-line" style="background:var(--border2);"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-ctitle">Leave for Giant — Level 4 parking</div><div class="tl-csub">Beat the Friday rush · Avoid B2</div><div class="tl-ctag" style="background:var(--amber-dim);color:var(--amber);">Parking tip</div></div></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-left"><div class="tl-time">8:00</div><div class="tl-dot" style="background:var(--purple);"></div><div class="tl-line" style="background:transparent;"></div></div>
+        <div class="tl-body"><div class="tl-card"><div class="tl-ctitle">Pay Maybank bill</div><div class="tl-csub">Due tomorrow · RM 245 · 2 min</div><div class="tl-ctag" style="background:var(--purple-dim);color:var(--purple);">Bill reminder</div></div></div>
+      </div>
+    </div>
+
+    <!-- ASK DAYFLOW -->
+    <div class="ask-wrap fi s4">
+      <div class="ask-bar" onclick="openAI()">
+        <span style="font-size:20px;">🧠</span>
+        <span class="ask-text">Ask DayFlow anything about your day...</span>
+        <span class="ask-ai">AI ↗</span>
+      </div>
+    </div>
+
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="bnav">
+    <button class="nb active" id="nb-home" onclick="gotoScreen('home')"><span class="nb-ic">🏠</span>Today</button>
+    <button class="nb" id="nb-notif" onclick="gotoScreen('notif')"><span class="nb-ic">🔔</span>Nudges<div class="nb-badge" id="notif-badge">3</div></button>
+    <button class="nb" id="nb-ai" onclick="openAI()"><span class="nb-ic">🧠</span>Ask AI</button>
+    <button class="nb" id="nb-set" onclick="gotoScreen('set')"><span class="nb-ic">⚙️</span>Settings</button>
+  </div>
+</div>
+
+<!-- ══════════ NOTIFICATIONS ══════════ -->
+<div class="screen" id="s-notif">
+  <div class="sbar">
+    <div class="sbar-logo">Day<b>Flow</b></div>
+    <div class="sbar-right"><div class="live-dot"></div><span class="sbar-time" id="sbar-time2"></span></div>
+  </div>
+  <div class="notif-hdr fi">
+    <div class="notif-title">Nudges</div>
+    <div class="notif-sub">Smart alerts — only when it matters</div>
+  </div>
+  <div class="nf-filters fi s1">
+    <button class="nff active" onclick="filterNotifs(this,'all')">All</button>
+    <button class="nff" onclick="filterNotifs(this,'travel')">🚗 Travel</button>
+    <button class="nff" onclick="filterNotifs(this,'food')">🍜 Food</button>
+    <button class="nff" onclick="filterNotifs(this,'money')">💳 Money</button>
+    <button class="nff" onclick="filterNotifs(this,'health')">💊 Health</button>
+    <button class="nff" onclick="filterNotifs(this,'docs')">📋 Docs</button>
+  </div>
+  <div class="scroll" id="notif-scroll">
+    <div class="ngroup fi s2">
+      <div class="ng-lbl">Right now</div>
+
+      <div class="ni unread" data-cat="health">
+        <div class="ni-dot"></div>
+        <div class="ni-ic" style="background:var(--red-dim);">💊</div>
+        <div class="ni-body">
+          <div class="ni-title">Take Metformin 500mg before breakfast</div>
+          <div class="ni-sub">With food · Before leaving for clinic at 8:45 AM</div>
+          <div class="ni-time">Now · Health</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-p" onclick="markDone(this,'Medication marked taken ✓')">Done ✓</button>
+            <button class="ni-btn ni-s" onclick="snoozeNotif(this)">Snooze 30 min</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ni unread" data-cat="travel">
+        <div class="ni-dot"></div>
+        <div class="ni-ic" style="background:var(--blue-dim);">🚇</div>
+        <div class="ni-body">
+          <div class="ni-title">Leave in 15 min — MRT to clinic</div>
+          <div class="ni-sub">Salak Selatan → Chan Sow Lin · 28 min · RM 1.80 · Leave by 8:45 AM</div>
+          <div class="ni-time">8:30 AM · Travel</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-p" onclick="doAction(event,'Opening MRT route...')">📍 Navigate</button>
+            <button class="ni-btn ni-s" onclick="doAction(event,'Opening Grab instead...')">🟢 Grab instead</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ni unread" data-cat="money">
+        <div class="ni-dot"></div>
+        <div class="ni-ic" style="background:var(--red-dim);">🏦</div>
+        <div class="ni-body">
+          <div class="ni-title">Maybank bill due tomorrow — RM 245</div>
+          <div class="ni-sub">Read from your SMS · Minimum payment RM 50 · Full balance preferred</div>
+          <div class="ni-time">Detected 7:15 AM · Bills</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-g" onclick="doAction(event,'Opening Maybank app...')">Pay now</button>
+            <button class="ni-btn ni-s" onclick="doAction(event,'Reminder set for 8 PM!')">Remind 8 PM</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ngroup fi s3">
+      <div class="ng-lbl">Coming up today</div>
+
+      <div class="ni" data-cat="food">
+        <div class="ni-ic" style="background:var(--coral-dim);">🍜</div>
+        <div class="ni-body">
+          <div class="ni-title">Lunch near KL Sentral — 3 options picked</div>
+          <div class="ni-sub">Nasi Kandar Pelita · Merchant's Lane · Bento Box Isetan · All under RM 25</div>
+          <div class="ni-time">For 12:30 PM · Food</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-p" onclick="gotoScreen('home');toggleCard('food')">See options</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ni" data-cat="travel">
+        <div class="ni-ic" style="background:var(--green-dim);">💬</div>
+        <div class="ni-body">
+          <div class="ni-title">WhatsApp booking: haircut at 3 PM</div>
+          <div class="ni-sub">Seng Huat Barber SS15 · Leave KL Sentral by 2:30 PM · Grab RM 9.20</div>
+          <div class="ni-time">Detected from WhatsApp · Booking</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-p" onclick="doAction(event,'Reminder set for 2:30 PM!')">⏰ Set reminder</button>
+            <button class="ni-btn ni-s" onclick="doAction(event,'Pre-booking Grab...')">🟢 Pre-book Grab</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ni" data-cat="docs">
+        <div class="ni-ic" style="background:var(--amber-dim);">🚗</div>
+        <div class="ni-body">
+          <div class="ni-title">Road tax expires in 18 days</div>
+          <div class="ni-sub">WXX 1234 · Renew online via MyEG · RM 90 · Takes 5 minutes</div>
+          <div class="ni-time">Documents · Non-urgent</div>
+          <div class="ni-acts">
+            <button class="ni-btn ni-a" onclick="doAction(event,'Opening MyEG...')">Renew now</button>
+            <button class="ni-btn ni-s" onclick="doAction(event,'Will remind you in 7 days!')">Remind in 7 days</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="ngroup fi s4">
+      <div class="ng-lbl">Earlier today</div>
+      <div class="ni" data-cat="health">
+        <div class="ni-ic" style="background:var(--blue-dim);">📅</div>
+        <div class="ni-body">
+          <div class="ni-title">Blood test follow-up — next Thursday</div>
+          <div class="ni-sub">Pusat Perubatan KL · 10:00 AM · Added to your calendar</div>
+          <div class="ni-time">7:00 AM · Health</div>
+        </div>
+      </div>
+      <div class="ni" data-cat="money">
+        <div class="ni-ic" style="background:var(--green-dim);">📱</div>
+        <div class="ni-body">
+          <div class="ni-title">Maxis bill — auto-pay confirmed</div>
+          <div class="ni-sub">RM 85 will deduct on 21 March · Nothing needed from you</div>
+          <div class="ni-time">7:00 AM · Bills</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:14px 18px;background:var(--bg2);margin:14px 18px;border-radius:14px;border:0.5px solid var(--border);">
+      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:4px;">🧠 How DayFlow decides what to tell you</div>
+      <div style="font-size:12px;color:var(--text3);line-height:1.7;">Only nudges you when it's time-sensitive, actionable, or saves you money. Reads your calendar, SMS and location — never sends spam.</div>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+
+  <div class="bnav">
+    <button class="nb" id="nb-home2" onclick="gotoScreen('home')"><span class="nb-ic">🏠</span>Today</button>
+    <button class="nb active" id="nb-notif2" onclick="gotoScreen('notif')"><span class="nb-ic">🔔</span>Nudges</button>
+    <button class="nb" onclick="openAI()"><span class="nb-ic">🧠</span>Ask AI</button>
+    <button class="nb" id="nb-set2" onclick="gotoScreen('set')"><span class="nb-ic">⚙️</span>Settings</button>
+  </div>
+</div>
+
+<!-- ══════════ SETTINGS ══════════ -->
+<div class="screen" id="s-set">
+  <div class="sbar">
+    <div class="sbar-logo">Day<b>Flow</b></div>
+    <div class="sbar-right"><div class="live-dot"></div><span class="sbar-time" id="sbar-time3"></span></div>
+  </div>
+  <div class="set-hdr fi">
+    <div class="set-title">Settings</div>
+    <div class="set-sub">Control what DayFlow knows and tells you</div>
+  </div>
+  <div class="scroll">
+    <div class="set-sec fi s1">
+      <div class="set-lbl">Nudge categories</div>
+      <div class="set-card">
+        <div class="set-row"><div class="set-ic" style="background:var(--blue-dim);">🗺️</div><div class="set-info"><div class="set-lbl2">Travel & routes</div><div class="set-val">Multi-stop optimisation, departure times</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--teal-dim);">🚗</div><div class="set-info"><div class="set-lbl2">Transport comparison</div><div class="set-val">Grab vs Bolt vs MRT live pricing</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--coral-dim);">🍜</div><div class="set-info"><div class="set-lbl2">Food suggestions</div><div class="set-val">En-route lunch & dinner options</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--amber-dim);">🅿️</div><div class="set-info"><div class="set-lbl2">Parking intelligence</div><div class="set-val">Availability alerts, best spot tips</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--green-dim);">💳</div><div class="set-info"><div class="set-lbl2">Bills from SMS</div><div class="set-val">Auto-detects due dates from your inbox</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--purple-dim);">📋</div><div class="set-info"><div class="set-lbl2">Document expiry</div><div class="set-val">Road tax, passport, insurance alerts</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--red-dim);">💊</div><div class="set-info"><div class="set-lbl2">Health & medication</div><div class="set-val">Medication reminders, appointment alerts</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--green-dim);">💬</div><div class="set-info"><div class="set-lbl2">WhatsApp bookings</div><div class="set-val">Auto-detect appointments from WhatsApp</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+
+    <div class="set-sec fi s2">
+      <div class="set-lbl">Nudge frequency</div>
+      <div class="set-card">
+        <div class="set-row"><div class="set-ic" style="background:var(--blue-dim);">🔕</div><div class="set-info"><div class="set-lbl2">Quiet hours</div><div class="set-val">10:00 PM – 7:00 AM</div></div><div style="font-size:12px;color:var(--blue);">Edit</div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--amber-dim);">📊</div><div class="set-info"><div class="set-lbl2">Max nudges per day</div><div class="set-val">Currently: Smart limit (7–10 max)</div></div><div style="font-size:12px;color:var(--blue);">Edit</div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--green-dim);">⚡</div><div class="set-info"><div class="set-lbl2">Urgency threshold</div><div class="set-val">Only nudge when time-sensitive</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+    </div>
+
+    <div class="set-sec fi s3">
+      <div class="set-lbl">Privacy</div>
+      <div class="set-card">
+        <div class="set-row"><div class="set-ic" style="background:var(--purple-dim);">🔒</div><div class="set-info"><div class="set-lbl2">SMS reading</div><div class="set-val">On-device only · Never leaves your phone</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--blue-dim);">📍</div><div class="set-info"><div class="set-lbl2">Location access</div><div class="set-val">While using app only</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+        <div class="set-row"><div class="set-ic" style="background:var(--red-dim);">🗑️</div><div class="set-info"><div class="set-lbl2">Delete all my data</div><div class="set-val">Wipes everything from this device</div></div><div style="font-size:12px;color:var(--red);">Delete</div></div>
+      </div>
+    </div>
+
+    <!-- FEEDBACK -->
+    <div class="set-sec fi s4">
+      <div class="set-lbl">Beta feedback</div>
+    </div>
+    <div class="feedback-card fi s5">
+      <div class="fb-title">How's DayFlow working for you?</div>
+      <div class="fb-sub">You're one of 5 beta testers. Your honest feedback shapes what we build next.</div>
+      <div class="star-row" id="stars">
+        <span class="star" onclick="rateStar(1)">⭐</span>
+        <span class="star" onclick="rateStar(2)">⭐</span>
+        <span class="star" onclick="rateStar(3)">⭐</span>
+        <span class="star" onclick="rateStar(4)">⭐</span>
+        <span class="star" onclick="rateStar(5)">⭐</span>
+      </div>
+      <textarea class="fb-input" id="fb-text" placeholder="What's working? What's missing? What would make you use this every day?"></textarea>
+      <button class="fb-btn" onclick="submitFeedback()">Send feedback 🚀</button>
+    </div>
+    <div style="height:8px;"></div>
+  </div>
+  <div class="bnav">
+    <button class="nb" onclick="gotoScreen('home')"><span class="nb-ic">🏠</span>Today</button>
+    <button class="nb" onclick="gotoScreen('notif')"><span class="nb-ic">🔔</span>Nudges</button>
+    <button class="nb" onclick="openAI()"><span class="nb-ic">🧠</span>Ask AI</button>
+    <button class="nb active"><span class="nb-ic">⚙️</span>Settings</button>
+  </div>
+</div>
+
+<!-- ══════════ AI SHEET ══════════ -->
+<div id="ai-sheet" onclick="if(event.target===this)closeAI()">
+  <div class="ai-body">
+    <div class="ai-handle"></div>
+    <div class="ai-hdr">
+      <div class="ai-av">🧠</div>
+      <div><div class="ai-nm">DayFlow AI</div><div class="ai-st">● Online · Knows your full day</div></div>
+    </div>
+    <div class="ai-msgs" id="ai-msgs">
+      <div class="ai-msg bot">Hey! I've already handled 7 decisions for today. What else can I help you think through? 😊</div>
+    </div>
+    <div class="ai-thinking" id="ai-thinking"><div class="ai-td"></div><div class="ai-td"></div><div class="ai-td"></div></div>
+    <div class="qreplies" id="qreplies">
+      <div class="qr" onclick="askAI(this.textContent)">What should I have for lunch?</div>
+      <div class="qr" onclick="askAI(this.textContent)">When should I leave for KL Sentral?</div>
+      <div class="qr" onclick="askAI(this.textContent)">Is Grab cheaper than MRT today?</div>
+      <div class="qr" onclick="askAI(this.textContent)">Remind me to pay my Maybank bill</div>
+      <div class="qr" onclick="askAI(this.textContent)">What's the best parking near Giant?</div>
+      <div class="qr" onclick="askAI(this.textContent)">What time should I leave for the barber?</div>
+    </div>
+    <div class="ai-inp-row">
+      <input class="ai-inp" id="ai-inp" placeholder="Ask anything about your day..." onkeydown="if(event.key==='Enter')sendAI()"/>
+      <button class="ai-send" onclick="sendAI()">↑</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── TIME ──────────────────────────────────────────────
+function updateTime() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-MY',{hour:'2-digit',minute:'2-digit',hour12:true});
+  ['sbar-time','sbar-time2','sbar-time3'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.textContent = t;
+  });
+  const h = now.getHours();
+  const greet = h < 12 ? 'Good morning 👋' : h < 17 ? 'Good afternoon ☀️' : 'Good evening 🌙';
+  const gel = document.getElementById('h-greeting'); if(gel) gel.textContent = greet;
+}
+setInterval(updateTime, 30000); updateTime();
+
+// ── NAVIGATION ────────────────────────────────────────
+function gotoScreen(s) {
+  ['home','notif','set'].forEach(id => {
+    document.getElementById('s-'+id).classList.toggle('active', id===s);
+  });
+  if(s==='notif') document.getElementById('notif-badge').style.display='none';
+}
+
+// ── CARD TOGGLE ───────────────────────────────────────
+function toggleCard(id) {
+  const card = document.getElementById('card-'+id);
+  const body = document.getElementById('body-'+id);
+  if (!card || !body) return;
+  const isOpen = body.classList.contains('open');
+  // Close all
+  document.querySelectorAll('.nc-body').forEach(b => b.classList.remove('open'));
+  document.querySelectorAll('.nudge-card').forEach(c => c.classList.remove('expanded'));
+  // Open this one if it wasn't open
+  if (!isOpen) {
+    body.classList.add('open');
+    card.classList.add('expanded');
+    setTimeout(() => card.scrollIntoView({behavior:'smooth',block:'nearest'}), 50);
+  }
+}
+
+// ── FOOD SELECTION ────────────────────────────────────
+function selectFood(e, id) {
+  e.stopPropagation();
+  document.querySelectorAll('.food-opt').forEach(f => f.classList.remove('sel'));
+  document.getElementById(id).classList.add('sel');
+  const names = {fo1:'Nasi Kandar Pelita',fo2:"Merchant's Lane",fo3:'Bento Box Isetan'};
+  showToast('✓ ' + names[id] + ' saved for lunch!');
+}
+
+// ── ACTIONS ───────────────────────────────────────────
+function doAction(e, msg) {
+  e.stopPropagation();
+  showToast(msg);
+}
+
+function markDone(btn, msg) {
+  btn.closest('.ni').style.opacity = '0.5';
+  showToast(msg);
+}
+
+function snoozeNotif(btn) {
+  btn.closest('.ni').style.opacity = '0.5';
+  showToast('Snoozed 30 minutes');
+}
+
+// ── NOTIFICATION FILTER ───────────────────────────────
+function filterNotifs(btn, cat) {
+  document.querySelectorAll('.nff').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.ni').forEach(ni => {
+    ni.style.display = (cat==='all' || ni.dataset.cat===cat) ? 'flex' : 'none';
+  });
+}
+
+// ── AI ASSISTANT ──────────────────────────────────────
+const AI_RESPONSES = {
+  'lunch': "Based on your 11 AM meeting near KL Sentral, I'd go with **Nasi Kandar Pelita** — it's 3 min walk, RM 12–18, and you'll be done well before 1 PM. Merchant's Lane is better but might take longer. 🍛",
+  'leave': "Leave by **10:28 AM** to make your 11 AM meeting comfortably via MRT. That gives you 5 min to walk from Chan Sow Lin station. If you take Grab, leave by 10:38 AM. 🚇",
+  'grab': "Right now MRT is **RM 11.40 cheaper** than Grab (RM 2.80 vs RM 14.20 with surge). Unless you're running late or have heavy bags, MRT wins today. 💰",
+  'maybank': "I've set a reminder for **8 PM tonight** to pay your Maybank bill. The minimum is RM 50 but full balance RM 245 is better to avoid interest. Want me to open the app now? 💳",
+  'parking': "Level 4 open air at Giant is your best bet on Friday evenings — usually 40–60% full at 5:30 PM. Basement 2 fills up fast after 6 PM. I've set a reminder to leave by 5:20 PM. 🅿️",
+  'barber': "Your haircut is at 3 PM at Seng Huat Barber SS15. **Leave KL Sentral by 2:30 PM** — Grab is RM 9.20 and takes 24 min. I can set a reminder and even pre-book Grab if you want. ✂️",
+  'default': "Good question! Based on your day today — 3 stops, a clinic visit, meeting at KL Sentral, haircut at 3 PM, and grocery run — you've got a full day. The most important thing right now is taking your Metformin before 8:30 AM. What specifically can I help with? 🧠"
+};
+
+function getAIResponse(msg) {
+  const m = msg.toLowerCase();
+  if (m.includes('lunch') || m.includes('eat') || m.includes('food')) return AI_RESPONSES.lunch;
+  if (m.includes('leave') || m.includes('when') || m.includes('sentral')) return AI_RESPONSES.leave;
+  if (m.includes('grab') || m.includes('mrt') || m.includes('cheaper') || m.includes('transport')) return AI_RESPONSES.grab;
+  if (m.includes('maybank') || m.includes('bill') || m.includes('pay') || m.includes('remind')) return AI_RESPONSES.maybank;
+  if (m.includes('parking') || m.includes('giant') || m.includes('park')) return AI_RESPONSES.parking;
+  if (m.includes('barber') || m.includes('haircut') || m.includes('3pm') || m.includes('barber')) return AI_RESPONSES.barber;
+  return AI_RESPONSES.default;
+}
+
+function openAI() { document.getElementById('ai-sheet').classList.add('open'); }
+function closeAI() { document.getElementById('ai-sheet').classList.remove('open'); }
+
+function askAI(msg) {
+  addMsg(msg, 'usr');
+  document.getElementById('qreplies').style.display = 'none';
+  showThinking();
+  setTimeout(() => {
+    hideThinking();
+    addMsg(getAIResponse(msg), 'bot');
+  }, 1200 + Math.random()*600);
+}
+
+function sendAI() {
+  const inp = document.getElementById('ai-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  askAI(msg);
+}
+
+function addMsg(text, type) {
+  const msgs = document.getElementById('ai-msgs');
+  const div = document.createElement('div');
+  div.className = 'ai-msg ' + type;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showThinking() { document.getElementById('ai-thinking').classList.add('show'); }
+function hideThinking() { document.getElementById('ai-thinking').classList.remove('show'); }
+
+// ── FEEDBACK ──────────────────────────────────────────
+let starRating = 0;
+function rateStar(n) {
+  starRating = n;
+  document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('on', i<n));
+}
+
+function submitFeedback() {
+  const text = document.getElementById('fb-text').value.trim();
+  if (!text && !starRating) { showToast('Please rate or leave a comment!'); return; }
+  const fb = {rating:starRating,text,ts:new Date().toISOString(),version:'DayFlow 2.0 beta'};
+  const existing = JSON.parse(localStorage.getItem('df2_feedback')||'[]');
+  existing.push(fb); localStorage.setItem('df2_feedback',JSON.stringify(existing));
+  document.getElementById('fb-text').value='';
+  document.querySelectorAll('.star').forEach(s=>s.classList.remove('on'));
+  starRating=0;
+  showToast('🙏 Thank you! Feedback sent to the DayFlow team.');
+}
+
+// ── TOAST ─────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ── INIT ──────────────────────────────────────────────
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hide');
+    setTimeout(() => document.getElementById('splash').remove(), 700);
+  }, 2000);
+});
+</script>
+</body>
+</html>
